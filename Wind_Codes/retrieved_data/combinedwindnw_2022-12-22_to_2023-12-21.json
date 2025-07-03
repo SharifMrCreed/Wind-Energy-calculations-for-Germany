@@ -1,0 +1,124 @@
+{
+    "Stations": [
+        "Greifswalder",
+        "Belm",
+        "Greifswald",
+        "Wernigerode",
+        "Artern",
+        "Quickborn",
+        "Putbus",
+        "Berlin-Brandenburg",
+        "Süpplingen",
+        "Travemünde",
+        "Quedlinburg",
+        "List",
+        "Rechlin",
+        "Langenlipsdorf",
+        "Brandenburg/Havel",
+        "Wittenberg",
+        "Leinefelde",
+        "Boizenburg",
+        "Schleswig",
+        "Kahler-Asten",
+        "Brake",
+        "Ummendorf",
+        "Schwerin",
+        "Fehmarn"
+    ],
+    "Greifswalder": {
+        "Power": 214512.69919859563,
+        "Energy": 35752.1165330978
+    },
+    "Belm": {
+        "Power": 161485.72455505474,
+        "Energy": 26914.28742584344
+    },
+    "Greifswald": {
+        "Power": 126779.70808147911,
+        "Energy": 21129.951346910388
+    },
+    "Wernigerode": {
+        "Power": 92238.53003750101,
+        "Energy": 15373.088339585067
+    },
+    "Artern": {
+        "Power": 142017.5320425672,
+        "Energy": 23669.5886737612
+    },
+    "Quickborn": {
+        "Power": 111193.15972295623,
+        "Energy": 18532.193287159316
+    },
+    "Putbus": {
+        "Power": 117239.69768312515,
+        "Energy": 19539.949613855195
+    },
+    "Berlin-Brandenburg": {
+        "Power": 188801.6733552633,
+        "Energy": 31466.945559209496
+    },
+    "Süpplingen": {
+        "Power": 173690.3582576937,
+        "Energy": 28948.393042951222
+    },
+    "Travemünde": {
+        "Power": 179555.1562458526,
+        "Energy": 29925.85937430826
+    },
+    "Quedlinburg": {
+        "Power": 92563.00367333603,
+        "Energy": 15427.167278888606
+    },
+    "List": {
+        "Power": 278326.43264891376,
+        "Energy": 46387.73877481792
+    },
+    "Rechlin": {
+        "Power": 177510.29323415505,
+        "Energy": 29585.04887235984
+    },
+    "Langenlipsdorf": {
+        "Power": 127847.89006401596,
+        "Energy": 21307.98167733643
+    },
+    "Brandenburg/Havel": {
+        "Power": 134084.7752132361,
+        "Energy": 22347.462535539376
+    },
+    "Wittenberg": {
+        "Power": 103082.20487816153,
+        "Energy": 17180.367479692155
+    },
+    "Leinefelde": {
+        "Power": 152296.4730120382,
+        "Energy": 25382.74550200658
+    },
+    "Boizenburg": {
+        "Power": 102216.15187389041,
+        "Energy": 17036.02531231511
+    },
+    "Schleswig": {
+        "Power": 131446.76612362784,
+        "Energy": 21907.794353941674
+    },
+    "Kahler-Asten": {
+        "Power": 236212.23522928185,
+        "Energy": 39368.70587154819
+    },
+    "Brake": {
+        "Power": 178709.6937274214,
+        "Energy": 29784.94895456729
+    },
+    "Ummendorf": {
+        "Power": 137051.7720959887,
+        "Energy": 22841.96201599871
+    },
+    "Schwerin": {
+        "Power": 73011.45018139083,
+        "Energy": 12168.575030232867
+    },
+    "Fehmarn": {
+        "Power": 234523.07733234685,
+        "Energy": 39087.17955539204
+    }
+}
