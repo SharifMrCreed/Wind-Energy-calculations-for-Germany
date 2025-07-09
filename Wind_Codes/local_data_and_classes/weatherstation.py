@@ -9,10 +9,30 @@ By Toluwalade lawal
 import codecs
 import os
 import random
+import httpx
 from difflib import SequenceMatcher
 
 
 PARENT_DIR = os.getcwd().removesuffix('/code_to_retrieve_data')
+STATION_CACHE_DIR = os.path.join(PARENT_DIR, 'cdc_data_model')
+STATION_FILE_URL = "https://opendata.dwd.de/climate_environment/CDC/help/zehn_min_ff_Beschreibung_Stationen.txt"
+STATION_FILE_PATH = os.path.join(STATION_CACHE_DIR, 'zehn_min_ff_Beschreibung_Stationen.txt')
+
+
+def _fetch_and_cache_station_data():
+    """Downloads the station description file and saves it locally."""
+    os.makedirs(STATION_CACHE_DIR, exist_ok=True)
+    try:
+        response = httpx.get(STATION_FILE_URL)
+        response.raise_for_status()  # Raise an exception for bad status codes
+        with open(STATION_FILE_PATH, 'wb') as f:
+            f.write(response.content)
+        print("Successfully downloaded and cached the latest station data.")
+    except httpx.RequestError as e:
+        print(f"Error downloading station data: {e}")
+        # If download fails, proceed with existing cache if it exists
+        if not os.path.exists(STATION_FILE_PATH):
+            raise FileNotFoundError("Station data could not be downloaded and no cache is available.") from e
 
 
 # This function compares two strings and gives a value for their similarities (0<= x <=1)
@@ -54,13 +74,14 @@ class Station:
         self.should_print = should_print
         self.user_pick = user_pick
         self.user_chose_a_state = False
+        self.is_solar = False  # Set to False for wind data retrieval
 
     def refresh(self):
         self.__init__()
 
     def get_all_stations(self):
         all_station_ids = []
-        stations_file = PARENT_DIR + '/local_data_and_classes/zehn_min_ff_Beschreibung_Stationen.txt'
+        stations_file = STATION_FILE_PATH
         with codecs.open(stations_file, 'r', encoding='utf-8',
                          errors='ignore') as file:
             rows = list(file.readlines())
@@ -94,6 +115,11 @@ class Station:
     def search(self, user_input=None):
         self.refresh()
         output = []
+
+        # Always fetch the latest station data when a new search is initiated
+        if user_input is None:
+            _fetch_and_cache_station_data()
+
         if user_input is None:
             user_input = input("Type in either the station's number,"
                                " station's name, state, or 'list' to type in a list of station numbers or 'all' "
@@ -112,9 +138,9 @@ class Station:
                 return
 
         if self.is_solar:
-            stations_file = PARENT_DIR + '/local_data_and_classes/zehn_min_sd_Beschreibung_Stationen.txt'
+            stations_file = STATION_FILE_PATH
         else:
-            stations_file = PARENT_DIR + '/local_data_and_classes/zehn_min_ff_Beschreibung_Stationen.txt'
+            stations_file = STATION_FILE_PATH
 
         with codecs.open(stations_file, 'r', encoding='utf-8',
                          errors='ignore') as file:
@@ -217,7 +243,7 @@ class Station:
                 name += self.change_special_letter(char)
             else:
                 name += char
-        with open(f"{PARENT_DIR}/retrieved_data/roughness_length.txt", "r") as file:
+        with open(f"{PARENT_DIR}/retrieved_data/roughness_length.json", "r") as file:
             stations = eval(file.read())
             name = match_name(name, stations)
             if name in stations.keys() and len(stations.get(name)) > 1:

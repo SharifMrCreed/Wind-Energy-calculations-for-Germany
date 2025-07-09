@@ -11,17 +11,18 @@ import pandas as pd
 import zipfile
 import io
 import os
-from Wind_Codes.local_data_and_classes.dates_fetcher import DatesFetcher
+from local_data_and_classes.dates_fetcher import DatesFetcher
 from selenium import webdriver
 from selenium.common import NoSuchElementException
 from selenium.webdriver.common.by import By
-from Wind_Codes.formulas.wind_formulas import *
-from Wind_Codes.local_data_and_classes.weatherstation import Station
+from formulas.wind_formulas import *
+from local_data_and_classes.weatherstation import Station
 
 pd.options.mode.chained_assignment = None
 
-wind_data_url = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind/"
-wind_data_url = wind_data_url + "historical/"
+base_url = "https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/wind/"
+historical_wind_data_url = base_url + "historical/"
+recent_wind_data_url = base_url + "recent/"
 
 
 # This function allows several http requests at the same time
@@ -134,27 +135,38 @@ async def retrieve_data():
         stations.fetch_roughness_lengths()
         stations = [stations]
 
-    driver = webdriver.Safari()
-    driver.get(wind_data_url)
-
+    driver = webdriver.Chrome()
     zip_files = {station.id: [] for station in stations}
-    for station in zip_files.keys():
-        text_to_look_for = f"wind_{station}"
-        zip_files[station] = driver.find_elements(By.XPATH, f"//a[contains(@href, '{text_to_look_for}')]")
-        if len(zip_files[station]) != 0:
-            for document in zip_files[station]:
-                position = zip_files[station].index(document)
-                document = document.get_attribute('href')
-                zip_files[station][position] = document
+
+    # Get historical data
+    driver.get(historical_wind_data_url)
+    for station in stations:
+        text_to_look_for = f"wind_{station.id}"
+        historical_files = driver.find_elements(By.XPATH, f"//a[contains(@href, '{text_to_look_for}')]")
+        for document in historical_files:
+            zip_files[station.id].append(document.get_attribute('href'))
+
+    # Get recent data
+    driver.get(recent_wind_data_url)
+    for station in stations:
+        text_to_look_for = f"10minutenwerte_wind_{station.id}_akt.zip"
+        try:
+            recent_file = driver.find_element(By.XPATH, f"//a[contains(@href, '{text_to_look_for}')]")
+            zip_files[station.id].append(recent_file.get_attribute('href'))
+        except NoSuchElementException:
+            pass  # Not all stations have recent data
+
+    driver.quit()
 
     for station in stations:
         try:
             total_rows_removed = 0
             data = []
+            columns = None
 
             cur_zip_files = zip_files.get(station.id)
 
-            if len(cur_zip_files) == 0:
+            if not cur_zip_files:
                 raise NoSuchElementException
 
             task = [fetch(url) for url in cur_zip_files]
@@ -164,38 +176,46 @@ async def retrieve_data():
                 rows_removed = 0
                 zip_file = io.BytesIO(wind_data_http_response.content)
                 with zipfile.ZipFile(zip_file, 'r') as wind_zip:
-                    columns = None
                     for file_name in wind_zip.namelist():
-                        # if file_name.startswith("produkt_zehn_min_ff_") and file_name.endswith(".txt"):
-                        with wind_zip.open(file_name) as text_file:
-                            columns = text_file.readline().decode('utf-8').strip().split(';')
-                            for line in text_file:
-                                row = line.decode('utf-8').strip().split(';')
-                                if int(row[4]) != -999:
-                                    data.append(row)
+                        if file_name.startswith("produkt"):
+                            with wind_zip.open(file_name) as text_file:
+                                if columns is None:
+                                    columns = text_file.readline().decode('utf-8').strip().split(';')
                                 else:
-                                    rows_removed += 1
-                                    total_rows_removed += 1
-                            print(f"Number of rows removed in file{responses.index(wind_data_http_response)+1}: {rows_removed}")
+                                    text_file.readline()  # Skip header of subsequent files
+                                for line in text_file:
+                                    row = line.decode('utf-8').strip().split(';')
+                                    if len(row) > 4 and row[4] != '     -999':
+                                        data.append(row)
+                                    else:
+                                        rows_removed += 1
+                                        total_rows_removed += 1
+                            print(f"Number of rows removed in file: {rows_removed}")
+            
+            if not data:
+                print(f"No data found for station {station.name} after processing files.\n")
+                continue
 
             print(f"Total number of rows removed for {station.name}: {total_rows_removed}\n")
 
-            start = pd.to_datetime(data[0][1])
-            end = pd.to_datetime(data[-1][1])
+            # Sort data by date
+            data.sort(key=lambda x: x[1])
 
-            # This removes stations that have a start date after 2012-01-01 or end date before 2021-01-01
-            if start > pd.to_datetime("201201010000") or end < pd.to_datetime("202101010000"):
-                print(f"The station {station.name} did not meet the date requirement\n")
-            else:
-                total_data[f'{station.id}'] = {'columns': columns, 'data': data}
-                key = f'{station.name}_{station.id}'
-                stations_list_dates[key] = {"start": start, "end": end}
-                final_stations_used.append(station)
+            start = pd.to_datetime(data[0][1], format='%Y%m%d%H%M')
+            end = pd.to_datetime(data[-1][1], format='%Y%m%d%H%M')
+
+            total_data[f'{station.id}'] = {'columns': columns, 'data': data}
+            key = f'{station.name}_{station.id}'
+            stations_list_dates[key] = {"start": start, "end": end}
+            final_stations_used.append(station)
 
         except NoSuchElementException:
             print(f"The data of station {station.name} is unavailable.\n")
 
-    create_excel_file(final_stations_used, total_data, stations_list_dates)
+    if final_stations_used:
+        create_excel_file(final_stations_used, total_data, stations_list_dates)
+    else:
+        print("\nNo stations found or no data available for the selected stations.")
 
 
 asyncio.run(retrieve_data())

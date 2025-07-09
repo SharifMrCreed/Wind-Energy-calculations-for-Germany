@@ -8,7 +8,7 @@ Created by Toluwalade Lawal
 from matplotlib import pyplot as plt
 import pandas as pd
 from pandas.tseries.offsets import DateOffset
-from Wind_Codes.local_data_and_classes.dates_fetcher import DatesFetcher
+from local_data_and_classes.dates_fetcher import DatesFetcher
 import os
 
 pd.options.mode.chained_assignment = None

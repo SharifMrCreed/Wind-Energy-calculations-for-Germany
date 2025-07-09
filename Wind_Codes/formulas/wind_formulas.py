@@ -5,6 +5,10 @@ POWER_CONSTANT = 6500
 
 
 def find_roughness_length(roughness_dict, wind_direction):
+    # If wind direction is invalid, we can't determine roughness.
+    if not isinstance(wind_direction, int) or wind_direction < 0:
+        return None  # Sentinel value for invalid data like -999
+
     angle_ranges = {'0': list(range(345, 361)) + list(range(0, 15)),
                     '30': list(range(15, 45)),
                     '60': list(range(45, 75)),
@@ -19,13 +23,23 @@ def find_roughness_length(roughness_dict, wind_direction):
                     '330': list(range(315, 345)),
                     }
 
-    for angle in angle_ranges:
-        if wind_direction in angle_ranges[angle]:
-            wind_direction = angle
-    return roughness_dict[wind_direction]
+    found_angle_key = None
+    for angle_key, degrees in angle_ranges.items():
+        if wind_direction in degrees:
+            found_angle_key = angle_key
+            break
+    
+    if found_angle_key:
+        return roughness_dict.get(found_angle_key)
+
+    return None # Return None if no angle range matches or key not in dict
 
 
 def calculate_power(wind_speed):
+    # Wind speed cannot be negative. If it is, power is 0.
+    # This also prevents the math.exp() from overflowing with large negative inputs.
+    if wind_speed < 0:
+        return 0.0
     return POWER_CONSTANT / (1 + math.exp((7.2 - wind_speed) / 0.53))
 
 
